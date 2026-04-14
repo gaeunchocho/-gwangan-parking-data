@@ -2,11 +2,22 @@ import requests
 import pandas as pd
 from datetime import datetime
 import os
+import time
 
 API_KEY = os.environ.get("BUSAN_API_KEY")
 URL = "http://apis.data.go.kr/6260000/BusanPblcPrkngInfoService/getPblcPrkngInfo"
 
 GWANGAN_KEYWORDS = ["민락", "광안", "수영"]
+
+def fetch_with_retry(params, retries=3):
+    for i in range(retries):
+        try:
+            res = requests.get(URL, params=params, timeout=30)
+            return res
+        except Exception as e:
+            print(f"재시도 {i+1}/{retries}: {e}")
+            time.sleep(5)
+    raise Exception("API 호출 실패")
 
 def collect():
     all_items = []
@@ -19,7 +30,7 @@ def collect():
             "pageNo": page,
             "resultType": "json"
         }
-        res = requests.get(URL, params=params, timeout=10)
+        res = fetch_with_retry(params)
         data = res.json()
 
         body = data["response"]["body"]
