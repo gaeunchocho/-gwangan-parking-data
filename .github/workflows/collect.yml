@@ -1,0 +1,33 @@
+name: Collect Parking Data
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests pandas
+
+      - name: Run collector
+        env:
+          BUSAN_API_KEY: ${{ secrets.BUSAN_API_KEY }}
+        run: python collect.py
+
+      - name: Commit data
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add data/
+          git commit -m "data: $(date '+%Y-%m-%d %H:%M')" || echo "No changes"
+          git push
